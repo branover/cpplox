@@ -21,7 +21,7 @@ struct VM {
     Value pop();
 
 private:
-    std::unique_ptr<Chunk> m_chunk;
+    std::shared_ptr<Chunk> m_chunk;
     uint8_t* m_ip {nullptr};
     std::vector<Value> m_stack {STACK_MAX};
     Value* m_stack_top {nullptr};

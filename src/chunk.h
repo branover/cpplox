@@ -16,7 +16,7 @@ enum OpCode {
 
     // Unary
     OP_NEGATE,
-    
+
     OP_RETURN,
 };
 
@@ -40,7 +40,7 @@ public:
 
     inline void write_chunk(uint8_t byte, int line) {
         this->push_back(byte);
-        if (line >= m_lines.size() + 1) {
+        if (line >= m_lines.size()) {
             m_lines.resize(line+1);
         }
         m_lines.at(line) = this->size();

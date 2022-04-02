@@ -8,15 +8,20 @@
 
 VM::VM() {
     m_stack_top = m_stack.data();
+    m_chunk = std::make_shared<Chunk>(Chunk {});
 }
 
 InterpretResult VM::interpret(const std::string &source) {
-    // m_chunk = std::make_unique<Chunk>(Chunk(std::move(chunk)));
-    // m_ip = CHUNK_START;
+    Compiler compiler {};
+    if (!compiler.compile(source, m_chunk)) {
+        return INTERPRET_COMPILE_ERROR;
+    }
 
-    // return this->run();
-    compile(source);
-    return INTERPRET_OK;
+    m_ip = CHUNK_START; 
+
+    InterpretResult result = run();
+
+    return result;
 }
 
 InterpretResult VM::run() {
