@@ -32,6 +32,18 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
     switch (instruction) {
         case OP_CONSTANT:
             return constant_instruction("OP_CONSTANT", chunk, offset, output);
+        case OP_NIL:
+            return simple_instruction("OP_NIL", offset, output);
+        case OP_TRUE:
+            return simple_instruction("OP_TRUE", offset, output);
+        case OP_FALSE:
+            return simple_instruction("OP_FALSE", offset, output);
+        case OP_EQUAL:
+            return simple_instruction("OP_EQUAL", offset, output);
+        case OP_GREATER:
+            return simple_instruction("OP_GREATER", offset, output);
+        case OP_LESS:
+            return simple_instruction("OP_LESS", offset, output);
         case OP_ADD:
             return simple_instruction("OP_ADD", offset, output);
         case OP_SUBTRACT:
@@ -44,6 +56,8 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return simple_instruction("OP_NEGATE", offset, output);
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset, output);
+        case OP_NOT:
+            return simple_instruction("OP_NOT", offset, output);
         default:
             output << "Unknown opcode " << instruction;
             return offset += 1;

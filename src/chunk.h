@@ -8,6 +8,16 @@
 enum OpCode {
     OP_CONSTANT,
 
+    // Optimized Values
+    OP_NIL,
+    OP_TRUE,
+    OP_FALSE,    
+
+    // Equality and Comparison
+    OP_EQUAL,
+    OP_GREATER,
+    OP_LESS,
+
     // Binary
     OP_ADD,
     OP_SUBTRACT,
@@ -15,6 +25,7 @@ enum OpCode {
     OP_DIVIDE,
 
     // Unary
+    OP_NOT,
     OP_NEGATE,
 
     OP_RETURN,

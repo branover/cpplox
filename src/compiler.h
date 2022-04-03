@@ -26,6 +26,7 @@ struct Compiler {
     void grouping();
     void unary();
     void binary();
+    void literal();
 
     uint8_t make_constant(Value value);
 

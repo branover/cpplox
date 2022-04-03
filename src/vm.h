@@ -15,10 +15,14 @@ enum InterpretResult {
 
 struct VM {
     VM();
+    void reset_stack();
     InterpretResult interpret(const std::string &source);
     InterpretResult run();
     void push(Value value);
     Value pop();
+    Value peek(int distance);
+
+    void runtime_error(const char* format, ...);
 
 private:
     std::shared_ptr<Chunk> m_chunk;

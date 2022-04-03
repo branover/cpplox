@@ -15,6 +15,7 @@ m_compiler {compiler} {
     ParseFn unary = BIND_FUNC(Compiler::unary);
     ParseFn binary = BIND_FUNC(Compiler::binary);
     ParseFn number = BIND_FUNC(Compiler::number);
+    ParseFn literal = BIND_FUNC(Compiler::literal);
     ParseFn NULL_FN {};
 
     m_rules =  {
@@ -41,21 +42,21 @@ m_compiler {compiler} {
         //[TOKEN_STAR]       
         {NULL_FN,     binary,    PREC_FACTOR},
         //[TOKEN_BANG]       
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {unary,       NULL_FN,   PREC_NONE},
         //[TOKEN_BANG_EQUAL] 
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_EQUALITY},
         //[TOKEN_EQUAL]      
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_EQUAL_EQUAL]
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_EQUALITY},
         //[TOKEN_GREATER]    
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_COMPARISON},
         //[TOKEN_GREATER_EQUA
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_COMPARISON},
         //[TOKEN_LESS]       
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_COMPARISON},
         //[TOKEN_LESS_EQUAL] 
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     binary,    PREC_COMPARISON},
         //[TOKEN_IDENTIFIER] 
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_STRING]     
@@ -69,7 +70,7 @@ m_compiler {compiler} {
         //[TOKEN_ELSE]       
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_FALSE]      
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {literal,     NULL_FN,   PREC_NONE},
         //[TOKEN_FOR]        
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_FUN]        
@@ -77,7 +78,7 @@ m_compiler {compiler} {
         //[TOKEN_IF]         
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_NIL]        
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {literal,     NULL_FN,   PREC_NONE},
         //[TOKEN_OR]         
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_PRINT]      
@@ -89,7 +90,7 @@ m_compiler {compiler} {
         //[TOKEN_THIS]       
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_TRUE]       
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {literal,     NULL_FN,   PREC_NONE},
         //[TOKEN_VAR]        
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_WHILE]      
