@@ -16,7 +16,7 @@ struct Compiler {
     void emit_byte(uint8_t byte);
     void emit_bytes(uint8_t byte1, uint8_t byte2);
     void emit_return();
-    void emit_constant(Value value);
+    void emit_constant(Value &value);
 
     std::shared_ptr<Chunk> current_chunk();
     void end_compiler();
@@ -27,8 +27,9 @@ struct Compiler {
     void unary();
     void binary();
     void literal();
+    void string();
 
-    uint8_t make_constant(Value value);
+    uint8_t make_constant(Value &value);
 
 private:
     std::unique_ptr<Parser> m_parser;

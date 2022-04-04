@@ -15,18 +15,28 @@ enum InterpretResult {
 
 struct VM {
     VM();
+    ~VM();
     void reset_stack();
     InterpretResult interpret(const std::string &source);
     InterpretResult run();
-    void push(Value value);
-    Value pop();
-    Value peek(int distance);
+    void push(Value &value);
+    void push(const Value &value);
+
+    Value& pop();
+    Value& peek(int distance);
 
     void runtime_error(const char* format, ...);
+
+    void concatenate();
+
+    void free_objects();
+
+    Obj* m_objects {nullptr};
 
 private:
     std::shared_ptr<Chunk> m_chunk;
     uint8_t* m_ip {nullptr};
     std::vector<Value> m_stack {STACK_MAX};
+    // std::vector<Value> m_stack {};
     Value* m_stack_top {nullptr};
 };

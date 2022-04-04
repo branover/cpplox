@@ -5,6 +5,9 @@
 #include "scanner.h"
 #include "chunk.h"
 #include "parser.h"
+#include "objects/object.h"
+#include "objects/objstring.h"
+
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -16,8 +19,8 @@ Compiler::Compiler() {
 }
 
 bool Compiler::compile(const std::string &source, std::shared_ptr<Chunk> chunk) {
-    m_scanner = std::make_shared<Scanner>(Scanner(source));
-    m_parser = std::make_unique<Parser>(Parser {m_scanner, *this});
+    m_scanner = std::make_shared<Scanner>(source);
+    m_parser = std::make_unique<Parser>(m_scanner, *this);
     m_compiling_chunk = chunk;
     advance();
     expression();
@@ -60,7 +63,7 @@ void Compiler::emit_return() {
     emit_byte(OP_RETURN);
 }
 
-void Compiler::emit_constant(Value value) {
+void Compiler::emit_constant(Value &value) {
     emit_bytes(OP_CONSTANT, make_constant(value));
 }
 
@@ -69,8 +72,8 @@ void Compiler::expression() {
 }
 
 void Compiler::number() {
-    double value = strtod(m_parser->previous().start, nullptr);
-    emit_constant(NUMBER_VAL(value));
+    auto value = NUMBER_VAL(strtod(m_parser->previous().start, nullptr));
+    emit_constant(value);
 }
 
 void Compiler::grouping() {
@@ -121,7 +124,13 @@ void Compiler::literal() {
     }
 }
 
-uint8_t Compiler::make_constant(Value value) {
+void Compiler::string() {
+    auto value = OBJ_VAL(ObjString::copy_string(m_parser->previous().start + 1,
+                                      m_parser->previous().length - 2));
+    emit_constant(value);
+}
+
+uint8_t Compiler::make_constant(Value &value) {
     int constant = current_chunk()->add_constant(value);
     if (constant > UINT8_MAX) {
         m_parser->error("Too many constants in one chunk");

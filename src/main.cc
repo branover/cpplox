@@ -10,6 +10,8 @@
 #include "debug.h"
 #include "vm.h"
 
+VM vm;
+
 static void run_file(const char* path, VM &vm) {
     std::ifstream in {path};
     if (!in.is_open()) {
@@ -32,13 +34,13 @@ static void repl(VM &vm) {
     std::cout << "> ";
     for (std::string line; std::getline(std::cin, line);) {
         vm.interpret(line);
+        vm.free_objects();        
         std::cout << "> ";
     }
     std::cout << std::endl;
 }
 
 int main(int argc, const char* argv[]) {
-    VM vm;
     if (argc == 1) {
         repl(vm);
     } else if (argc == 2) {

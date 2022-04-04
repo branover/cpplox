@@ -57,8 +57,8 @@ public:
         m_lines.at(line) = this->size();
     }
 
-    inline int add_constant(Value value) {
-        m_constants.push_back(value);
+    inline int add_constant(Value &value) {
+        m_constants.push_back(std::move(value));
 
         // Return the index of the new value
         return m_constants.size() - 1; 

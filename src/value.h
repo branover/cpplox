@@ -2,41 +2,71 @@
 
 #include <sstream>
 #include <iomanip>
+#include <memory>
 
 #include "common.h"
+
+struct Obj;
 
 enum ValueType {
     VAL_BOOL,
     VAL_NIL,
     VAL_NUMBER,
+    VAL_OBJ,
 };
 
-// typedef double Value;
+union CastValue {
+    constexpr CastValue() {}
+    ~CastValue() {} 
+    bool boolean;
+    double number;
+    Obj *obj;
+    void* any;
+};
+
 struct Value {
+    Value();
+    Value(ValueType type, bool value);
+    Value(ValueType type);
+    Value(ValueType type, double value);
+    Value(ValueType type, Obj* value);
+    Value(const Value &old);
+    Value(Value&& other);
+    ~Value();
+
     friend std::ostream& operator << (std::ostream &os, const Value &value);
-    bool is_falsey() const;
     bool operator==(const Value& other) const;
+    Value& operator=(const Value& other);
+    Value& operator=(Value&& other);
+
+    bool is_falsey() const;
 
     ValueType type;
-    union {
-        bool boolean;
-        double number;
-
-    } as;
+    CastValue as;
+  
 };
 
 #define IS_BOOL(value)    ((value).type == VAL_BOOL)
 #define IS_NIL(value)     ((value).type == VAL_NIL)
 #define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
+#define IS_OBJ(value)     ((value).type == VAL_OBJ)
 
 #define AS_BOOL(value)    ((value).as.boolean)
 #define AS_NUMBER(value)  ((value).as.number)
+#define AS_OBJ(value)     ((value).as.obj)
 
-#define BOOL_VAL(value)   ((Value){VAL_BOOL, {.boolean = value}})
-#define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
-#define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
+// #define BOOL_VAL(value)   ((Value){VAL_BOOL, {.boolean = value}})
+// #define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
+// #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
+// #define OBJ_VAL(object)   ((Value){VAL_OBJ, {.obj = (Obj*)object}})
 
-// void print_value(const Value &value, std::stringstream &output);
+#define BOOL_VAL(value)   ((Value){VAL_BOOL, value})
+#define NIL_VAL           ((Value){VAL_NIL})
+#define NUMBER_VAL(value) ((Value){VAL_NUMBER, value})
+#define OBJ_VAL(object)   ((Value){VAL_OBJ, (Obj*)object})
+// #define OBJ_VAL(object)   ((Value){VAL_OBJ, static_cast<std::shared_ptr<Obj>>(object)})
+// #define STR_VAL(object)   ((Value){VAL_OBJ, static_cast<std::shared_ptr<ObjString>>(object)})
+
 
 template<typename stream_type>
 void print_value(const Value &value, stream_type &output);

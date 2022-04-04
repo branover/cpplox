@@ -6,16 +6,24 @@
 #include "scanner.h"
 #include "compiler.h"
 
-#define BIND_FUNC(name) std::bind(&name, &m_compiler)
+// #define BIND_FUNC(name) std::bind(&name, &m_compiler)
+#define BIND_FUNC(name) ParseFn name = std::bind(&Compiler::name, &m_compiler)
 
 Parser::Parser(std::shared_ptr<Scanner> scanner, Compiler& compiler): 
 m_scanner {scanner},
 m_compiler {compiler} {
-    ParseFn grouping = BIND_FUNC(Compiler::grouping);
-    ParseFn unary = BIND_FUNC(Compiler::unary);
-    ParseFn binary = BIND_FUNC(Compiler::binary);
-    ParseFn number = BIND_FUNC(Compiler::number);
-    ParseFn literal = BIND_FUNC(Compiler::literal);
+    // ParseFn grouping = BIND_FUNC(Compiler::grouping);
+    // ParseFn unary = BIND_FUNC(Compiler::unary);
+    // ParseFn binary = BIND_FUNC(Compiler::binary);
+    // ParseFn number = BIND_FUNC(Compiler::number);
+    // ParseFn literal = BIND_FUNC(Compiler::literal);
+    // ParseFn string = BIND_FUNC(Compiler::string);
+    BIND_FUNC(grouping);
+    BIND_FUNC(unary);
+    BIND_FUNC(binary);
+    BIND_FUNC(number);
+    BIND_FUNC(literal);
+    BIND_FUNC(string);
     ParseFn NULL_FN {};
 
     m_rules =  {
@@ -60,7 +68,7 @@ m_compiler {compiler} {
         //[TOKEN_IDENTIFIER] 
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_STRING]     
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {string,     NULL_FN,   PREC_NONE},
         //[TOKEN_NUMBER]     
         {number,      NULL_FN,   PREC_NONE},
         //[TOKEN_AND]        

@@ -9,7 +9,7 @@ set(CMAKE_BUILD_TYPE debug)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wc99-designator")
 
 # sources
-file(GLOB source_glob src/*.cc)
+file(GLOB source_glob src/*.cc src/objects/*.cc)
 file(GLOB header_glob src/*.h include/*.h)
 set(SOURCES ${source_glob} ${header_glob})
 
