@@ -11,7 +11,13 @@ enum OpCode {
     // Optimized Values
     OP_NIL,
     OP_TRUE,
-    OP_FALSE,    
+    OP_FALSE,
+
+    // Other Values
+    OP_POP,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL,
+    OP_DEFINE_GLOBAL,    
 
     // Equality and Comparison
     OP_EQUAL,
@@ -27,6 +33,9 @@ enum OpCode {
     // Unary
     OP_NOT,
     OP_NEGATE,
+
+    // Statements
+    OP_PRINT,
 
     OP_RETURN,
 };

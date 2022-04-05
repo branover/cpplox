@@ -56,6 +56,7 @@ InterpretResult VM::interpret(const std::string &source) {
 InterpretResult VM::run() {
 #define READ_BYTE() (*m_ip++)
 #define READ_CONSTANT() (m_chunk->constants()[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op) \
     do { \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -86,6 +87,33 @@ InterpretResult VM::run() {
             case OP_NIL:        push(NIL_VAL); break;
             case OP_TRUE:       push(BOOL_VAL(true)); break;
             case OP_FALSE:      push(BOOL_VAL(false)); break;
+            case OP_POP:        pop(); break;
+            case OP_GET_GLOBAL:  {
+                ObjString* name = READ_STRING();
+                try {
+                    push(reinterpret_cast<const Value&>(m_globals.at(*name->m_str)));
+                } catch (const std::out_of_range&) {
+                    runtime_error("Undefined variable '%s'.", name->m_str->c_str());
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_DEFINE_GLOBAL: {
+                ObjString* name = READ_STRING();
+                m_globals[*name->m_str] = peek(0);
+                pop();
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                try {
+                    m_globals.at(*name->m_str) = peek(0);
+                } catch (const std::out_of_range &e) {
+                    runtime_error("Undefined variable '%s'.", name->m_str->c_str());
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop();
                 Value a = pop();
@@ -120,15 +148,19 @@ InterpretResult VM::run() {
                 }    
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
-            case OP_RETURN: {
+            case OP_PRINT: {
                 print_value(pop(), std::cout);
-                printf("\n");
+                std::cout << std::endl;
+                break;
+            }
+            case OP_RETURN: {
                 return INTERPRET_OK;
             }
         }
     }
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 
@@ -168,6 +200,6 @@ void VM::concatenate() {
     ObjString* b = AS_STRING(pop());
     ObjString* a = AS_STRING(pop());
 
-    *a->m_str += *b->m_str;
-    push(std::move(OBJ_VAL(a)));
+    std::string new_str = *a->m_str + *b->m_str;
+    push(std::move(OBJ_VAL(ObjString::take_string(new_str))));
 }

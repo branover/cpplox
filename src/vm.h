@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include "chunk.h"
 #include "value.h"
@@ -32,6 +33,8 @@ struct VM {
     void free_objects();
 
     Obj* m_objects {nullptr};
+    std::unordered_map<std::string, Value> m_strings {};
+    std::unordered_map<std::string, Value> m_globals {};
 
 private:
     std::shared_ptr<Chunk> m_chunk;

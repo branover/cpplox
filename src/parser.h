@@ -6,7 +6,7 @@
 #include "token.h"
 #include "scanner.h"
 
-typedef std::function<void()> ParseFn;
+using ParseFn = std::function<void(bool)>;
 
 struct Compiler;
 
@@ -38,6 +38,7 @@ struct Parser {
     Token& previous();
     bool had_error();
     bool panic_mode();
+    void synchronize();
     void error_at_current();
     void error(const char* message);
     void error_at(Token &token, const char * message);
@@ -46,6 +47,10 @@ struct Parser {
 
     inline ParseRule& get_rule(TokenType type) {
         return m_rules[type];
+    }
+
+    inline bool check(TokenType type) {
+        return m_current.type == type;
     }
 
 private:

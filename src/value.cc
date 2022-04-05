@@ -76,8 +76,12 @@ Value& Value::operator=(const Value& other) {
     return *this;
 }
 
-Value& Value::operator=(Value&& other) {
-    // std::cout << "***VALUE ASSIGNMENT MOVED***" << std::endl;
+Value& Value::operator=(Value&& other){
+    // std::cout << "***VALUE MOVED***" << std::endl;
+    type = std::move(other.type);
+    as = std::move(other.as);
+    other.as.any = nullptr;
+    other.type = VAL_NIL;
     return *this;
 }
 
@@ -90,8 +94,7 @@ bool Value::operator==(const Value& other) const {
         case VAL_OBJ: {
             ObjString * a_string = AS_STRING(*this);
             ObjString * b_string = AS_STRING(other);
-            return a_string->m_str == b_string->m_str;
-
+            return a_string->m_str->compare(*b_string->m_str) == 0;
         }
         default:         return false; // Unreachable.
     }

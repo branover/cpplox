@@ -23,8 +23,13 @@ bool Compiler::compile(const std::string &source, std::shared_ptr<Chunk> chunk) 
     m_parser = std::make_unique<Parser>(m_scanner, *this);
     m_compiling_chunk = chunk;
     advance();
-    expression();
-    consume(TOKEN_EOF, "Expect end of expression.");
+
+    while (!match(TOKEN_EOF)) {
+        declaration();
+    }
+    // expression();
+    // consume(TOKEN_EOF, "Expect end of expression.");
+
     end_compiler();
     return !m_parser->had_error();
 }
@@ -71,17 +76,17 @@ void Compiler::expression() {
     m_parser->parse_precedence(PREC_ASSIGNMENT);
 }
 
-void Compiler::number() {
+void Compiler::number(bool can_assign) {
     auto value = NUMBER_VAL(strtod(m_parser->previous().start, nullptr));
     emit_constant(value);
 }
 
-void Compiler::grouping() {
+void Compiler::grouping(bool can_assign) {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-void Compiler::unary() {
+void Compiler::unary(bool can_assign) {
     TokenType operator_type = m_parser->previous().type;
 
     // Compile the operand.
@@ -95,7 +100,7 @@ void Compiler::unary() {
     }
 }
 
-void Compiler::binary() {
+void Compiler::binary(bool can_assign) {
     TokenType operator_type = m_parser->previous().type;
     ParseRule& rule {m_parser->get_rule(operator_type)};
     m_parser->parse_precedence(static_cast<Precedence>(rule.precedence + 1));
@@ -115,7 +120,7 @@ void Compiler::binary() {
     }
 }
 
-void Compiler::literal() {
+void Compiler::literal(bool can_assign) {
     switch (m_parser->previous().type) {
         case TOKEN_FALSE: emit_byte(OP_FALSE); break;
         case TOKEN_NIL: emit_byte(OP_NIL); break;
@@ -124,10 +129,80 @@ void Compiler::literal() {
     }
 }
 
-void Compiler::string() {
+void Compiler::string(bool can_assign) {
     auto value = OBJ_VAL(ObjString::copy_string(m_parser->previous().start + 1,
                                       m_parser->previous().length - 2));
+    std::cout << "Printing value: " << value << std::endl;
     emit_constant(value);
+}
+
+void Compiler::variable(bool can_assign) {
+    named_variable(m_parser->previous(), can_assign);
+}
+
+void Compiler::declaration() {
+    if (match(TOKEN_VAR)) {
+        var_declaration();
+    } else {
+        statement();
+    }
+
+    if (m_parser->panic_mode()) {
+        m_parser->synchronize();
+    }
+}
+
+void Compiler::var_declaration() {
+    uint8_t global_index = parse_variable("Expect variable name.");
+    if (match(TOKEN_EQUAL)) {
+        expression();
+    } else {
+        emit_byte(OP_NIL);
+    }
+    consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+    define_variable(global_index);
+}
+
+void Compiler::statement() {
+    if (match(TOKEN_PRINT)) {
+        print_statement();
+    } else {
+        expression_statement();
+    }
+}
+
+void Compiler::print_statement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emit_byte(OP_PRINT);
+}
+
+void Compiler::expression_statement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+    emit_byte(OP_POP);
+}
+
+bool Compiler::match(TokenType type) {
+    if (m_parser->check(type)) {
+        advance();
+        return true;
+    }
+    return false;
+}
+
+uint8_t Compiler::parse_variable(const char* error_message) {
+    consume(TOKEN_IDENTIFIER, error_message);
+    return identifier_constant(m_parser->previous());
+}
+
+void Compiler::define_variable(uint8_t global_index) {
+    emit_bytes(OP_DEFINE_GLOBAL, global_index);
+}
+
+uint8_t Compiler::identifier_constant(Token& token) {
+    Value value = OBJ_VAL(ObjString::copy_string(token.start, token.length));
+    return make_constant(value);
 }
 
 uint8_t Compiler::make_constant(Value &value) {
@@ -140,4 +215,14 @@ uint8_t Compiler::make_constant(Value &value) {
     return (uint8_t) constant;
 }
 
+void Compiler::named_variable(Token &name, bool can_assign) {
+    uint8_t arg = identifier_constant(name);
+
+    if (can_assign && match(TOKEN_EQUAL)) {
+        expression();
+        emit_bytes(OP_SET_GLOBAL, arg);
+    } else {
+        emit_bytes(OP_GET_GLOBAL, arg);
+    }
+}
 

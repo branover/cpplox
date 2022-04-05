@@ -38,6 +38,14 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return simple_instruction("OP_TRUE", offset, output);
         case OP_FALSE:
             return simple_instruction("OP_FALSE", offset, output);
+        case OP_POP:
+            return simple_instruction("OP_POP", offset, output);
+        case OP_GET_GLOBAL:
+            return constant_instruction("OP_GET_GLOBAL", chunk, offset, output);
+        case OP_DEFINE_GLOBAL:
+            return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset, output);
+        case OP_SET_GLOBAL:
+            return constant_instruction("OP_SET_GLOBAL", chunk, offset, output);
         case OP_EQUAL:
             return simple_instruction("OP_EQUAL", offset, output);
         case OP_GREATER:
@@ -54,6 +62,8 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return simple_instruction("OP_DIVIDE", offset, output);
         case OP_NEGATE:
             return simple_instruction("OP_NEGATE", offset, output);
+        case OP_PRINT:
+            return simple_instruction("OP_PRINT", offset, output);
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset, output);
         case OP_NOT:

@@ -11,12 +11,14 @@ struct ObjString: Obj {
     ObjString() = default;
     ObjString(ObjType type, const char* chars, size_t length);
     ObjString(const ObjString& other);
+    ObjString(std::string &str);
     ~ObjString();
     ObjString* clone() override;
     ObjString* copy() override;
 
     static ObjString* copy_string(const char* chars, size_t length);
-    static ObjString* allocate_string(const char* chars, size_t length);    
+    static ObjString* allocate_string(const char* chars, size_t length);
+    static ObjString* take_string(std::string &str);   
 
     std::shared_ptr<std::string> m_str {};
 };

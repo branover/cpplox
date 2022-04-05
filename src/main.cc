@@ -34,7 +34,6 @@ static void repl(VM &vm) {
     std::cout << "> ";
     for (std::string line; std::getline(std::cin, line);) {
         vm.interpret(line);
-        vm.free_objects();        
         std::cout << "> ";
     }
     std::cout << std::endl;

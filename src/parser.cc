@@ -7,23 +7,19 @@
 #include "compiler.h"
 
 // #define BIND_FUNC(name) std::bind(&name, &m_compiler)
-#define BIND_FUNC(name) ParseFn name = std::bind(&Compiler::name, &m_compiler)
+#define BIND_FUNC(name) ParseFn name = std::bind(&Compiler::name, &m_compiler, std::placeholders::_1)
 
 Parser::Parser(std::shared_ptr<Scanner> scanner, Compiler& compiler): 
 m_scanner {scanner},
-m_compiler {compiler} {
-    // ParseFn grouping = BIND_FUNC(Compiler::grouping);
-    // ParseFn unary = BIND_FUNC(Compiler::unary);
-    // ParseFn binary = BIND_FUNC(Compiler::binary);
-    // ParseFn number = BIND_FUNC(Compiler::number);
-    // ParseFn literal = BIND_FUNC(Compiler::literal);
-    // ParseFn string = BIND_FUNC(Compiler::string);
+m_compiler {compiler}
+{
     BIND_FUNC(grouping);
     BIND_FUNC(unary);
     BIND_FUNC(binary);
     BIND_FUNC(number);
     BIND_FUNC(literal);
     BIND_FUNC(string);
+    BIND_FUNC(variable);
     ParseFn NULL_FN {};
 
     m_rules =  {
@@ -66,9 +62,9 @@ m_compiler {compiler} {
         //[TOKEN_LESS_EQUAL] 
         {NULL_FN,     binary,    PREC_COMPARISON},
         //[TOKEN_IDENTIFIER] 
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {variable,    NULL_FN,   PREC_NONE},
         //[TOKEN_STRING]     
-        {string,     NULL_FN,   PREC_NONE},
+        {string,      NULL_FN,   PREC_NONE},
         //[TOKEN_NUMBER]     
         {number,      NULL_FN,   PREC_NONE},
         //[TOKEN_AND]        
@@ -137,6 +133,30 @@ bool Parser::panic_mode() {
     return m_panic_mode;
 }
 
+void Parser::synchronize() {
+    m_panic_mode = false;
+
+    while (m_current.type != TOKEN_EOF) {
+        if (m_previous.type == TOKEN_SEMICOLON) return;
+
+        switch (m_current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+            default:
+                break;
+        }
+
+        advance();
+    }
+}
+
 void Parser::error_at_current() {
     error_at(m_current, m_current.start);
 }
@@ -178,11 +198,17 @@ void Parser::parse_precedence(Precedence precedence) {
         error("Expect expression");
         return;
     }
-    prefix_rule();
+
+    bool can_assign = precedence <= PREC_ASSIGNMENT;
+    prefix_rule(can_assign);
 
     while (precedence <= get_rule(m_current.type).precedence) {
         advance();
         ParseFn infix_rule = get_rule(m_previous.type).infix;
-        infix_rule();
+        infix_rule(can_assign);
+    }
+
+    if (can_assign && m_compiler.match(TOKEN_EQUAL)) {
+        error("Invalid assignment target");
     }
 }
