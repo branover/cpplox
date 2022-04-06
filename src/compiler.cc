@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstring>
 
 #include "common.h"
 #include "compiler.h"
@@ -15,7 +16,7 @@
 
 
 Compiler::Compiler() {
- 
+    m_locals.reserve(256); 
 }
 
 bool Compiler::compile(const std::string &source, std::shared_ptr<Chunk> chunk) {
@@ -132,7 +133,6 @@ void Compiler::literal(bool can_assign) {
 void Compiler::string(bool can_assign) {
     auto value = OBJ_VAL(ObjString::copy_string(m_parser->previous().start + 1,
                                       m_parser->previous().length - 2));
-    std::cout << "Printing value: " << value << std::endl;
     emit_constant(value);
 }
 
@@ -166,6 +166,10 @@ void Compiler::var_declaration() {
 void Compiler::statement() {
     if (match(TOKEN_PRINT)) {
         print_statement();
+    } else if (match(TOKEN_LEFT_BRACE)) {
+        begin_scope();
+        block();
+        end_scope();
     } else {
         expression_statement();
     }
@@ -183,6 +187,28 @@ void Compiler::expression_statement() {
     emit_byte(OP_POP);
 }
 
+void Compiler::block() {
+    while (!m_parser->check(TOKEN_RIGHT_BRACE) && !m_parser->check(TOKEN_EOF)) {
+        declaration();
+    }
+
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+void Compiler::begin_scope() {
+    m_scope_depth++;
+}
+
+void Compiler::end_scope() {
+    m_scope_depth--;
+
+    while (m_locals.size() > 0 &&
+        m_locals[m_locals.size() -1].depth > m_scope_depth) {
+        emit_byte(OP_POP);
+        m_locals.pop_back();
+    }
+}
+
 bool Compiler::match(TokenType type) {
     if (m_parser->check(type)) {
         advance();
@@ -193,10 +219,37 @@ bool Compiler::match(TokenType type) {
 
 uint8_t Compiler::parse_variable(const char* error_message) {
     consume(TOKEN_IDENTIFIER, error_message);
+
+    declare_variable();
+    if (m_scope_depth > 0) return 0;
+
     return identifier_constant(m_parser->previous());
 }
 
+void Compiler::declare_variable() {
+    if (m_scope_depth == 0) return;
+
+    Token &name = m_parser->previous();
+
+    for (auto it = m_locals.rbegin(); it != m_locals.rend(); ++it) {
+        Local &local = *it;
+        if (local.depth != -1 && local.depth < m_scope_depth) break;
+
+        if (identifiers_equal(name, local.name)) {
+            m_parser->error("Variable with this name already declared in this scope.");
+        }
+    }
+
+    add_local(name);
+}
+
 void Compiler::define_variable(uint8_t global_index) {
+    if (m_scope_depth > 0) {
+        // Mark initialized
+        m_locals.back().depth = m_scope_depth;
+        return;
+    }
+
     emit_bytes(OP_DEFINE_GLOBAL, global_index);
 }
 
@@ -216,13 +269,50 @@ uint8_t Compiler::make_constant(Value &value) {
 }
 
 void Compiler::named_variable(Token &name, bool can_assign) {
-    uint8_t arg = identifier_constant(name);
+    uint8_t get_op {}, set_op {};
+    int arg = resolve_local(name);
+    if (arg != -1) {
+        get_op = OP_GET_LOCAL;
+        set_op = OP_SET_LOCAL;
+    } else {
+        arg = identifier_constant(name);
+        get_op = OP_GET_GLOBAL;
+        set_op = OP_SET_GLOBAL;
+    }
 
     if (can_assign && match(TOKEN_EQUAL)) {
         expression();
-        emit_bytes(OP_SET_GLOBAL, arg);
+        emit_bytes(set_op, arg);
     } else {
-        emit_bytes(OP_GET_GLOBAL, arg);
+        emit_bytes(get_op, arg);
     }
 }
 
+void Compiler::add_local(Token &name) {
+    if (m_locals.size() > UINT8_MAX) {
+        m_parser->error("Too many local variables in one function.");
+        return;
+    }
+
+    m_locals.emplace_back(Local {.name = name, .depth = -1});
+}
+
+int Compiler::resolve_local(Token &name) {
+    for (int i = m_locals.size() - 1; i >= 0; i--) {
+        Local &local = m_locals[i];
+        if (identifiers_equal(name, local.name)) {
+            if (local.depth == -1) {
+                m_parser->error("Cannot read local variable in its own initializer.");
+                return -1;
+            }
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+bool Compiler::identifiers_equal(Token &a, Token &b) {
+    if (a.length != b.length) return false;
+    return memcmp(a.start, b.start, a.length) == 0;
+}

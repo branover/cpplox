@@ -5,6 +5,12 @@
 
 #include "chunk.h"
 #include "parser.h"
+#include "token.h"
+
+struct Local {
+    Token name {};
+    int depth;
+};
 
 struct Compiler {
     // bool compile(const std::string &source, Chunk &chunk); 
@@ -36,17 +42,29 @@ struct Compiler {
     void statement();
     void print_statement();
     void expression_statement();
+    void block();
+
+    void begin_scope();
+    void end_scope();
 
     bool match(TokenType type);
 
     uint8_t parse_variable(const char* error_message);
+    void declare_variable();
     void define_variable(uint8_t global_index);
     uint8_t identifier_constant(Token& toknen);
     uint8_t make_constant(Value &value);
-    void named_variable(Token &name, bool can_assign);    
+    void named_variable(Token &name, bool can_assign);   
+    void add_local(Token &name);
+    int resolve_local(Token &name);
+    bool identifiers_equal(Token &a, Token &b);
 
 private:
     std::unique_ptr<Parser> m_parser;
     std::shared_ptr<Scanner> m_scanner;
     std::shared_ptr<Chunk> m_compiling_chunk;
+
+    // Locals
+    std::vector<Local> m_locals {};
+    int m_scope_depth {0};
 };

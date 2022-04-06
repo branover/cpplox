@@ -40,6 +40,10 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return simple_instruction("OP_FALSE", offset, output);
         case OP_POP:
             return simple_instruction("OP_POP", offset, output);
+        case OP_GET_LOCAL:
+            return byte_instruction("OP_GET_LOCAL", chunk, offset, output);
+        case OP_SET_LOCAL:
+            return byte_instruction("OP_SET_LOCAL", chunk, offset, output);
         case OP_GET_GLOBAL:
             return constant_instruction("OP_GET_GLOBAL", chunk, offset, output);
         case OP_DEFINE_GLOBAL:
@@ -86,6 +90,14 @@ int constant_instruction(std::string name, const Chunk &chunk, int offset, strea
     output << std::left << std::setw(16) << std::setfill(' ') << name << " " << std::right;
     output << std::setw(4) << std::setfill('0') << (unsigned int)constant << " ";
     print_value(chunk.constants()[constant], output);
+    return offset + 2;
+}
+
+template <typename stream_type>
+int byte_instruction(std::string name, const Chunk &chunk, int offset, stream_type &output) {
+    uint8_t slot = chunk[offset + 1];
+    output << std::left << std::setw(16) << std::setfill(' ') << name << " " << std::right;
+    output << std::setw(4) << std::setfill('0') << (unsigned int)slot << " " << std::endl;
     return offset + 2;
 }
 
