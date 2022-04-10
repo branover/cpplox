@@ -52,6 +52,17 @@ void Compiler::emit_bytes(uint8_t byte1, uint8_t byte2) {
     emit_byte(byte2);
 }
 
+void Compiler::emit_loop(int loop_start) {
+    emit_byte(OP_LOOP);
+    int offset = current_chunk()->size() - loop_start + 2;
+    if (offset > UINT16_MAX) {
+        m_parser->error("Loop body too large.");
+        return;
+    }
+    emit_byte((offset >> 8) & 0xff);
+    emit_byte(offset & 0xff);
+}
+
 std::shared_ptr<Chunk> Compiler::current_chunk() {
     return m_compiling_chunk;
 }
@@ -159,6 +170,28 @@ void Compiler::variable(bool can_assign) {
     named_variable(m_parser->previous(), can_assign);
 }
 
+void Compiler::and_(bool can_assign) {
+    int end_jump = emit_jump(OP_JUMP_IF_FALSE);
+
+    // Compile the right operand.
+    emit_byte(OP_POP);
+    m_parser->parse_precedence(PREC_AND);
+
+    patch_jump(end_jump);
+}
+
+void Compiler::or_(bool can_assign) {
+    int else_jump = emit_jump(OP_JUMP_IF_FALSE);
+    int end_jump = emit_jump(OP_JUMP);
+
+    patch_jump(else_jump);
+    emit_byte(OP_POP);
+
+    // Compile the right operand.
+    m_parser->parse_precedence(PREC_OR);
+    patch_jump(end_jump);
+}
+
 void Compiler::declaration() {
     if (match(TOKEN_VAR)) {
         var_declaration();
@@ -187,6 +220,16 @@ void Compiler::statement() {
         print_statement();
     } else if (match(TOKEN_IF)){
         if_statement();
+    } else if (match(TOKEN_WHILE)) {
+        while_statement();
+    } else if (match(TOKEN_FOR)) {
+        for_statement();
+    // } else if (match(TOKEN_BREAK)) {
+    //     emit_byte(OP_BREAK);
+    // } else if (match(TOKEN_CONTINUE)) {
+    //     emit_byte(OP_CONTINUE);
+    // } else if (match(TOKEN_RETURN)) {
+    //     return_statement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         begin_scope();
         block();
@@ -200,6 +243,72 @@ void Compiler::print_statement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emit_byte(OP_PRINT);
+}
+
+void Compiler::while_statement() {
+    // Compile the condition.
+    int loop_start = current_chunk()->size();
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    // Jump to the end of the loop if the condition is false.
+    int exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+    emit_byte(OP_POP);
+    statement();
+    emit_loop(loop_start);
+
+    patch_jump(exit_jump);
+    emit_byte(OP_POP);
+}
+
+void Compiler::for_statement() {
+    begin_scope();
+
+    // Compile the initializer.
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+    if (match(TOKEN_SEMICOLON)) {
+        // No initializer.
+    } else if (match(TOKEN_VAR)) {
+        var_declaration();
+    } else {
+        expression_statement();
+    }
+
+    int loop_start = current_chunk()->size();
+    int exit_jump = -1;
+    if (!match(TOKEN_SEMICOLON)) {
+        // Compile the condition.
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+        exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+        emit_byte(OP_POP);
+    }
+
+    // Compile the incrementor.
+    if (!match(TOKEN_RIGHT_PAREN)) {
+        int body_jump = emit_jump(OP_JUMP);
+
+        int increment_start = current_chunk()->size();
+        expression();
+        emit_byte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        emit_loop(loop_start);
+        loop_start = increment_start;
+        patch_jump(body_jump);
+    }
+
+    statement();
+    emit_loop(loop_start);
+
+    if (exit_jump != -1) {
+        patch_jump(exit_jump);
+        emit_byte(OP_POP);
+    }
+
+    end_scope();
 }
 
 void Compiler::if_statement() {

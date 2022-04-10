@@ -20,6 +20,8 @@ m_compiler {compiler}
     BIND_FUNC(literal);
     BIND_FUNC(string);
     BIND_FUNC(variable);
+    BIND_FUNC(and_);
+    BIND_FUNC(or_);
     ParseFn NULL_FN {};
 
     m_rules =  {
@@ -68,7 +70,7 @@ m_compiler {compiler}
         //[TOKEN_NUMBER]     
         {number,      NULL_FN,   PREC_NONE},
         //[TOKEN_AND]        
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     and_,   PREC_AND},
         //[TOKEN_CLASS]      
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_ELSE]       
@@ -84,7 +86,7 @@ m_compiler {compiler}
         //[TOKEN_NIL]        
         {literal,     NULL_FN,   PREC_NONE},
         //[TOKEN_OR]         
-        {NULL_FN,     NULL_FN,   PREC_NONE},
+        {NULL_FN,     or_,   PREC_OR},
         //[TOKEN_PRINT]      
         {NULL_FN,     NULL_FN,   PREC_NONE},
         //[TOKEN_RETURN]     

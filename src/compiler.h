@@ -21,6 +21,7 @@ struct Compiler {
 
     void emit_byte(uint8_t byte);
     void emit_bytes(uint8_t byte1, uint8_t byte2);
+    void emit_loop(int loop_start);
     void emit_return();
     void emit_constant(Value &value);
     int emit_jump(uint8_t instruction);
@@ -37,12 +38,16 @@ struct Compiler {
     void literal(bool can_assign);
     void string(bool can_assign);
     void variable(bool can_assign);
+    void and_(bool can_assign);
+    void or_(bool can_assign);
 
 
     void declaration();
     void var_declaration();
     void statement();
     void print_statement();
+    void while_statement();
+    void for_statement();
     void if_statement();
     void block();    
     void expression_statement();

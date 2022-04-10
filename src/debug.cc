@@ -72,6 +72,8 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return jump_instruction("OP_JUMP", 1, chunk, offset, output);
         case OP_JUMP_IF_FALSE:
             return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset, output);
+        case OP_LOOP:
+            return jump_instruction("OP_LOOP", -1, chunk, offset, output);
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset, output);
         case OP_NOT:

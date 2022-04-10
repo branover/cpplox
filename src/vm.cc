@@ -177,6 +177,11 @@ InterpretResult VM::run() {
                 }
                 break;
             }
+            case OP_LOOP: {
+                int offset = READ_SHORT();
+                m_ip -= offset;
+                break;
+            }
             case OP_RETURN: {
                 return INTERPRET_OK;
             }
