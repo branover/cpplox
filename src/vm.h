@@ -40,6 +40,5 @@ private:
     std::shared_ptr<Chunk> m_chunk;
     uint8_t* m_ip {nullptr};
     std::vector<Value> m_stack {STACK_MAX};
-    // std::vector<Value> m_stack {};
     Value* m_stack_top {nullptr};
 };

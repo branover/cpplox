@@ -73,6 +73,25 @@ void Compiler::emit_constant(Value &value) {
     emit_bytes(OP_CONSTANT, make_constant(value));
 }
 
+int Compiler::emit_jump(uint8_t instruction) {
+    emit_byte(instruction);
+    emit_byte(0xff);
+    emit_byte(0xff);
+    return current_chunk()->size() - 2;
+}
+
+void Compiler::patch_jump(int offset) {
+    int jump = current_chunk()->size() - offset - 2;
+
+    if (jump > UINT16_MAX) {
+        m_parser->error("Too much code to jump over.");
+        return;
+    }
+
+    (*current_chunk())[offset] = static_cast<uint8_t>((jump >> 8) & 0xff);
+    (*current_chunk())[offset + 1] = static_cast<uint8_t>(jump & 0xff);
+}
+
 void Compiler::expression() {
     m_parser->parse_precedence(PREC_ASSIGNMENT);
 }
@@ -166,6 +185,8 @@ void Compiler::var_declaration() {
 void Compiler::statement() {
     if (match(TOKEN_PRINT)) {
         print_statement();
+    } else if (match(TOKEN_IF)){
+        if_statement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         begin_scope();
         block();
@@ -181,10 +202,24 @@ void Compiler::print_statement() {
     emit_byte(OP_PRINT);
 }
 
-void Compiler::expression_statement() {
+void Compiler::if_statement() {
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
     expression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    int then_jump = emit_jump(OP_JUMP_IF_FALSE);
     emit_byte(OP_POP);
+    statement();
+
+    int else_jump = emit_jump(OP_JUMP);
+
+    patch_jump(then_jump);
+    emit_byte(OP_POP);
+
+    if (match(TOKEN_ELSE)) {
+        statement();
+    }
+    patch_jump(else_jump);
 }
 
 void Compiler::block() {
@@ -193,6 +228,12 @@ void Compiler::block() {
     }
 
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+void Compiler::expression_statement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+    emit_byte(OP_POP);
 }
 
 void Compiler::begin_scope() {

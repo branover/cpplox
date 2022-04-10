@@ -16,8 +16,8 @@ enum ValueType {
 };
 
 union CastValue {
-    constexpr CastValue() {}
-    ~CastValue() {} 
+    constexpr CastValue() {any = nullptr;}
+    ~CastValue() {any = nullptr;} 
     bool boolean;
     double number;
     Obj *obj;
@@ -41,8 +41,8 @@ struct Value {
 
     bool is_falsey() const;
 
-    ValueType type;
-    CastValue as;
+    ValueType type {};
+    CastValue as {};
   
 };
 
@@ -55,18 +55,10 @@ struct Value {
 #define AS_NUMBER(value)  ((value).as.number)
 #define AS_OBJ(value)     ((value).as.obj)
 
-// #define BOOL_VAL(value)   ((Value){VAL_BOOL, {.boolean = value}})
-// #define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
-// #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
-// #define OBJ_VAL(object)   ((Value){VAL_OBJ, {.obj = (Obj*)object}})
-
 #define BOOL_VAL(value)   ((Value){VAL_BOOL, value})
 #define NIL_VAL           ((Value){VAL_NIL})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, value})
 #define OBJ_VAL(object)   ((Value){VAL_OBJ, (Obj*)object})
-// #define OBJ_VAL(object)   ((Value){VAL_OBJ, static_cast<std::shared_ptr<Obj>>(object)})
-// #define STR_VAL(object)   ((Value){VAL_OBJ, static_cast<std::shared_ptr<ObjString>>(object)})
-
 
 template<typename stream_type>
 void print_value(const Value &value, stream_type &output);

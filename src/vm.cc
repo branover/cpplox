@@ -56,6 +56,8 @@ InterpretResult VM::interpret(const std::string &source) {
 InterpretResult VM::run() {
 #define READ_BYTE() (*m_ip++)
 #define READ_CONSTANT() (m_chunk->constants()[READ_BYTE()])
+#define READ_SHORT() \
+    (m_ip += 2, (uint16_t)((m_ip[-2] << 8) | m_ip[-1]))
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op) \
     do { \
@@ -163,12 +165,25 @@ InterpretResult VM::run() {
                 std::cout << std::endl;
                 break;
             }
+            case OP_JUMP: {
+                uint16_t offset = READ_SHORT();
+                m_ip += offset;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                int offset = READ_SHORT();
+                if (peek(0).is_falsey()) {
+                    m_ip += offset;
+                }
+                break;
+            }
             case OP_RETURN: {
                 return INTERPRET_OK;
             }
         }
     }
 #undef READ_BYTE
+#undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP

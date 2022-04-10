@@ -68,6 +68,10 @@ int disassemble_instruction(const Chunk &chunk, int offset, stream_type &output)
             return simple_instruction("OP_NEGATE", offset, output);
         case OP_PRINT:
             return simple_instruction("OP_PRINT", offset, output);
+        case OP_JUMP:
+            return jump_instruction("OP_JUMP", 1, chunk, offset, output);
+        case OP_JUMP_IF_FALSE:
+            return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset, output);
         case OP_RETURN:
             return simple_instruction("OP_RETURN", offset, output);
         case OP_NOT:
@@ -101,10 +105,24 @@ int byte_instruction(std::string name, const Chunk &chunk, int offset, stream_ty
     return offset + 2;
 }
 
+template <typename stream_type>
+int jump_instruction(std::string name, int sign, const Chunk &chunk, int offset, stream_type &output) {
+    uint16_t jump = chunk[offset + 1] << 8;
+    jump |= chunk[offset + 2];
+    output << std::left << std::setw(16) << std::setfill(' ') << name << " " << std::right;
+    output << std::setw(4) << std::setfill('0') << (unsigned int)offset << " -> ";
+    output << offset + 3 + (sign * jump);
+    return offset + 3;
+}
+
 template int disassemble_instruction(const Chunk&, int, std::stringstream&);
 template int simple_instruction(std::string, int, std::stringstream&);
 template int constant_instruction(std::string, const Chunk &, int, std::stringstream&);
+template int byte_instruction(std::string, const Chunk &, int, std::stringstream&);
+template int jump_instruction(std::string, int, const Chunk &, int, std::stringstream&);
 
 template int disassemble_instruction(const Chunk&, int, std::ostream&);
 template int simple_instruction(std::string, int, std::ostream&);
 template int constant_instruction(std::string, const Chunk &, int, std::ostream&);
+template int byte_instruction(std::string, const Chunk &, int, std::ostream&);
+template int jump_instruction(std::string, int, const Chunk &, int, std::ostream&);

@@ -52,10 +52,10 @@ Value::Value(Value&& other):
 }
 
 Value::~Value() {
-    // std::cout << "VALUE DESTRUCTOR" << std::endl;   
-    if (type == VAL_OBJ) {
-        // delete as.obj;
-    } 
+    // std::cout << "VALUE DESTRUCTOR, type: " << type << " ptr: " << (void*) this << std::endl;   
+    // if (type == VAL_OBJ) {
+    //     delete as.obj;
+    // } 
 }
 
 std::ostream &operator<<(std::ostream &os, Value const &value) {

@@ -15,3 +15,6 @@ int constant_instruction(std::string name, const Chunk &chunk, int offset, strea
 
 template <typename stream_type>
 int byte_instruction(std::string name, const Chunk &chunk, int offset, stream_type &output);
+
+template <typename stream_type>
+int jump_instruction(std::string name, int sign, const Chunk &chunk, int offset, stream_type &output);

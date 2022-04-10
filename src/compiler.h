@@ -23,6 +23,8 @@ struct Compiler {
     void emit_bytes(uint8_t byte1, uint8_t byte2);
     void emit_return();
     void emit_constant(Value &value);
+    int emit_jump(uint8_t instruction);
+    void patch_jump(int offset);
 
     std::shared_ptr<Chunk> current_chunk();
     void end_compiler();
@@ -41,8 +43,9 @@ struct Compiler {
     void var_declaration();
     void statement();
     void print_statement();
+    void if_statement();
+    void block();    
     void expression_statement();
-    void block();
 
     void begin_scope();
     void end_scope();
